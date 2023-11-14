@@ -7,12 +7,14 @@ KP = 0.002  # Término proporcional
 KI = 0  # Término integral
 KD = 0.01 # Término derivativo
 
-linear_velocity = 5
+linear_velocity = 7
 
-max_velocity = 6
+max_velocity = 7
 min_velocity = 2.5
-curve_speed_factor = 0.3
+curve_speed_factor = 0.2
 
+kd_min = 0
+kd_max = 0.01
 
 prev_error = 0
 integral = 0
@@ -21,7 +23,7 @@ def calculate_speed_factor(curve_angle):
     # Diseña una función que ajuste la velocidad en función del ángulo de la curva
     # Puedes experimentar con diferentes funciones según tus necesidades
     # Por ejemplo, puedes devolver un valor más bajo para curvas más agresivas
-    return max(0.5, 1 - 0.01 * abs(curve_angle))
+    return max(0.5, 1 - 0.1 * abs(curve_angle))
 
 while True:
     # Obtener la vista desde el punto de vista del agente
@@ -69,15 +71,17 @@ while True:
           speed_factor = calculate_speed_factor(curve_angle)
           # Calcula la velocidad considerando el límite inferior y la velocidad inicial
           linear_velocity = max(min_velocity, max_velocity * speed_factor * (1 - curve_speed_factor * abs(angular_velocity)))
+          
+
 
           # Establecer las velocidades del agente
           HAL.setV(linear_velocity)  # Velocidad hacia adelante constante
           HAL.setW(angular_velocity)
 
         prev_error = error
-
+ 
     # Mostrar la vista del agente
     GUI.showImage(red_mask)
 
     # Actualizar el número de pasos
-    print('cX: %.2f cY: %.2f linear_velocity: %.2f' % (cX, cY, linear_velocity))
+    print('cX: %.2f cY: %.2f linear_velocity: %.2f curve_angle: %.2f' % (cX, cY, linear_velocity, curve_angle))
