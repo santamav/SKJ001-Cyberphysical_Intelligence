@@ -1,7 +1,5 @@
-# SistemesIntelligents-Cyberphysical_Intelligence
+# SKJ001 - Cyberphysical Intelligence
 
+Exercises for the practical part of the cyberphisical intelligence course
 
-
-
-
-# PABLOOOOOOOOO!! DEIXA DE COPIAR OSTIE
+- Exercise 1: Follow line PID controller
