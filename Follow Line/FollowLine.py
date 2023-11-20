@@ -3,18 +3,16 @@ from HAL import HAL
 import cv2
 
 # Constantes del control PID (ajusta estos valores según sea necesario)
-KP = 0.002  # Término proporcional
+KP = 0.0025  # Término proporcional
 KI = 0  # Término integral
-KD = 0.01 # Término derivativo
+KD = 0.015 # Término derivativo
 
 linear_velocity = 7
 
 max_velocity = 7
-min_velocity = 2.5
+min_velocity = 2
 curve_speed_factor = 0.2
 
-kd_min = 0
-kd_max = 0.01
 
 prev_error = 0
 integral = 0
@@ -23,7 +21,7 @@ def calculate_speed_factor(curve_angle):
     # Diseña una función que ajuste la velocidad en función del ángulo de la curva
     # Puedes experimentar con diferentes funciones según tus necesidades
     # Por ejemplo, puedes devolver un valor más bajo para curvas más agresivas
-    return max(0.5, 1 - 0.1 * abs(curve_angle))
+    return max(0.5, 1 - 0.01 * abs(curve_angle))
 
 while True:
     # Obtener la vista desde el punto de vista del agente
