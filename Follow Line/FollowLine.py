@@ -3,15 +3,15 @@ from HAL import HAL
 import cv2
 
 # Constantes del control PID (ajusta estos valores según sea necesario)
-KP = 0.0025  # Término proporcional
+KP = 0.002  # Término proporcional
 KI = 0  # Término integral
-KD = 0.015 # Término derivativo
+KD = 0.01 # Término derivativo
 
-linear_velocity = 7
+linear_velocity = 5
 
-max_velocity = 7
-min_velocity = 2
-curve_speed_factor = 0.2
+max_velocity = 6
+min_velocity = 2.5
+curve_speed_factor = 0.3
 
 
 prev_error = 0
@@ -69,17 +69,15 @@ while True:
           speed_factor = calculate_speed_factor(curve_angle)
           # Calcula la velocidad considerando el límite inferior y la velocidad inicial
           linear_velocity = max(min_velocity, max_velocity * speed_factor * (1 - curve_speed_factor * abs(angular_velocity)))
-          
-
 
           # Establecer las velocidades del agente
           HAL.setV(linear_velocity)  # Velocidad hacia adelante constante
           HAL.setW(angular_velocity)
 
         prev_error = error
- 
+
     # Mostrar la vista del agente
     GUI.showImage(red_mask)
 
     # Actualizar el número de pasos
-    print('cX: %.2f cY: %.2f linear_velocity: %.2f curve_angle: %.2f' % (cX, cY, linear_velocity, curve_angle))
+    print('cX: %.2f cY: %.2f linear_velocity: %.2f' % (cX, cY, linear_velocity))
