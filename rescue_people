@@ -1,0 +1,42 @@
+from GUI import GUI
+from HAL import HAL
+import cv2
+
+# Initialize GUI and HAL
+gui = GUI()
+hal = HAL()
+
+# Coordinates of the safety boat and known survivor location
+safety_boat_location = (40.280061, -3.817639)  # 40º16’48.2” N, 3º49’03.5” W
+survivor_location = (40.279786, -3.817161)  # 40º16’47.23” N, 3º49’01.78” W
+
+# Main loop
+while True:
+    # Capture image from the quadrotor's camera
+    image = hal.get_camera_image()
+
+    # Use OpenCV for face detection (you may need to install OpenCV)
+    faces = cv2.detect_faces(image)
+
+    # Check if faces are detected
+    if faces:
+        for face in faces:
+            # Extract face coordinates
+            x, y, w, h = face['coordinates']
+
+            # Calculate the center of the detected face
+            face_center_x = x + w // 2
+            face_center_y = y + h // 2
+
+            # Display the detected face on the GUI
+            gui.show_detected_face(image, (face_center_x, face_center_y))
+
+            # Calculate the GPS coordinates of the detected face
+            # You may need to calibrate this based on the camera's orientation
+            face_gps_location = calculate_gps_location(face_center_x, face_center_y)
+
+            # Save the GPS location of the detected face for rescue maneuver
+            hal.save_survivor_location(face_gps_location)
+
+    # Perform subsequent rescue maneuver based on saved locations
+    hal.perform_rescue_maneuver()
