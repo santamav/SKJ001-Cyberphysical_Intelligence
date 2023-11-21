@@ -79,3 +79,84 @@ while True:
 	# Enter iterative code!
 	GUI.showImage(HAL.get_frontal_image())
 	GUI.showLeftImage(HAL.get_ventral_image())
+
+
+
+
+######################################
+
+
+
+import cv2
+import numpy as np
+from GUI import GUI
+from HAL import HAL
+
+# Constants
+victims_x = 40.16  # Update with the actual coordinates
+victims_y = -3.49  # Update with the actual coordinates
+boat_x = 0
+boat_y = 0
+
+x_vel = 0.25
+angle = 0.6
+iterations = 0
+spiral_iterations = 300
+landing_margin = 0.07
+
+# Takeoff
+HAL.takeoff(3)
+
+# Face detection function
+def detect_faces(image):
+    # Use a pre-trained face detection model
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    
+    # Convert the image to grayscale for face detection
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    # Detect faces in the image
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=5)
+    
+    return faces
+
+# Main loop
+while True:
+    # Capture images from the drone's cameras
+    frontal_image = HAL.get_frontal_image()
+    ventral_image = HAL.get_ventral_image()
+
+    # Show images in the GUI
+    GUI.showImage(frontal_image)
+    GUI.showLeftImage(ventral_image)
+
+    # Detect faces in the frontal camera image
+    faces = detect_faces(frontal_image)
+
+    if len(faces) > 0:
+        # Face detected, save the location
+        face_x = np.mean(faces[:, 0] + faces[:, 2] / 2.0)  # X-coordinate of the face
+        face_y = np.mean(faces[:, 1] + faces[:, 3] / 2.0)  # Y-coordinate of the face
+
+        # Perform rescue maneuver
+        while not ((face_x - 1 < x_pos) and (x_pos < face_x + 1) and (face_y - 1 < y_pos) and (y_pos < face_y + 1)):
+            # Update drone position
+            x_pos = HAL.get_position()[0]
+            y_pos = HAL.get_position()[1]
+
+            # Command the drone to the detected face location
+            HAL.set_cmd_pos(face_x, face_y, 3, angle)
+
+            # Capture updated images
+            frontal_image = HAL.get_frontal_image()
+            ventral_image = HAL.get_ventral_image()
+
+            # Show images in the GUI
+            GUI.showImage(frontal_image)
+            GUI.showLeftImage(ventral_image)
+
+        # Perform rescue maneuver, e.g., hover in place or land
+        # Add your rescue maneuver logic here
+
+# Note: This code is a starting point and may need further customization based on your specific requirements.
+
