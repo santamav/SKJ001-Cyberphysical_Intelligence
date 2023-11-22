@@ -1,60 +1,17 @@
 from GUI import GUI
 from HAL import HAL
-import cv2
-
-# Initialize GUI and HAL
-gui = GUI()
-hal = HAL()
 
 # Coordinates of the safety boat and known survivor location
-safety_boat_location = (40.280061, -3.817639)  # 40º16’48.2” N, 3º49’03.5” W
-survivor_location = (40.279786, -3.817161)  # 40º16’47.23” N, 3º49’01.78” W
+boat_coordinates = (430492, 4459162)  # 40º16'48.2" N, 3º49'03.5" W
+survivor_coordinates = (430532, 4459132)  # 40º16'47.23" N, 3º49'01.78" W
 
-# Main loop
-while True:
-    # Capture image from the quadrotor's camera
-    image = hal.get_camera_image()
-
-    # Use OpenCV for face detection (you may need to install OpenCV)
-    faces = cv2.detect_faces(image)
-
-    # Check if faces are detected
-    if faces:
-        for face in faces:
-            # Extract face coordinates
-            x, y, w, h = face['coordinates']
-
-            # Calculate the center of the detected face
-            face_center_x = x + w // 2
-            face_center_y = y + h // 2
-
-            # Display the detected face on the GUI
-            gui.show_detected_face(image, (face_center_x, face_center_y))
-
-            # Calculate the GPS coordinates of the detected face
-            # You may need to calibrate this based on the camera's orientation
-            face_gps_location = calculate_gps_location(face_center_x, face_center_y)
-
-            # Save the GPS location of the detected face for rescue maneuver
-            hal.save_survivor_location(face_gps_location)
-
-    # Perform subsequent rescue maneuver based on saved locations
-    hal.perform_rescue_maneuver()
-
-
-
-
-######################################
-
-
-
-from GUI import GUI
-from HAL import HAL
-
-victims_x = 30
-victims_y = -40
+victims_x = boat_coordinates[1] - survivor_coordinates[1] # Relative victims positions
+victims_y = boat_coordinates[0] - survivor_coordinates[0] # Relative victims positions
+print("x: ", victims_x, "// y: ", victims_y)
 boat_x = 0
 boat_y = 0
+
+takeoff_height = 4
 
 x_vel = 0.25
 angle = 0.6
@@ -65,156 +22,20 @@ landing_margin = 0.07
 x_pos = HAL.get_position()[0]
 y_pos = HAL.get_position()[1]
 
-HAL.takeoff(3)
-
+# Takeoff
+HAL.takeoff(takeoff_height)
+# Move to accident position
 while not ((victims_x-1 < x_pos) and (x_pos <victims_x+1) and (victims_y-1 < y_pos) and (y_pos < victims_y+1)):
 	GUI.showImage(HAL.get_frontal_image())
 	GUI.showLeftImage(HAL.get_ventral_image())
 	x_pos = HAL.get_position()[0]
 	y_pos = HAL.get_position()[1]
 	HAL.set_cmd_pos(victims_x, victims_y, 3, angle)
+	# TODO: Should calculate the angle to face the direction in which we are moving
 	# time.sleep(0.01)
-	
+# Find and save 
+
 while True:
-	# Enter iterative code!
-	GUI.showImage(HAL.get_frontal_image())
-	GUI.showLeftImage(HAL.get_ventral_image())
-
-
-
-
-######################################
-
-
-
-import cv2
-import numpy as np
-from GUI import GUI
-from HAL import HAL
-
-# Constants
-victims_x = 40.16  # Update with the actual coordinates
-victims_y = -3.49  # Update with the actual coordinates
-boat_x = 0
-boat_y = 0
-
-x_vel = 0.25
-angle = 0.6
-iterations = 0
-spiral_iterations = 300
-landing_margin = 0.07
-
-# Takeoff
-HAL.takeoff(3)
-
-# Face detection function
-def detect_faces(image):
-    # Use a pre-trained face detection model
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    
-    # Convert the image to grayscale for face detection
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    
-    # Detect faces in the image
-    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=5)
-    
-    return faces
-
-# Main loop
-while True:
-    # Capture images from the drone's cameras
-    frontal_image = HAL.get_frontal_image()
-    ventral_image = HAL.get_ventral_image()
-
-    # Show images in the GUI
-    GUI.showImage(frontal_image)
-    GUI.showLeftImage(ventral_image)
-
-    # Detect faces in the frontal camera image
-    faces = detect_faces(frontal_image)
-
-    if len(faces) > 0:
-        # Face detected, save the location
-        face_x = np.mean(faces[:, 0] + faces[:, 2] / 2.0)  # X-coordinate of the face
-        face_y = np.mean(faces[:, 1] + faces[:, 3] / 2.0)  # Y-coordinate of the face
-
-        # Perform rescue maneuver
-        while not ((face_x - 1 < x_pos) and (x_pos < face_x + 1) and (face_y - 1 < y_pos) and (y_pos < face_y + 1)):
-            # Update drone position
-            x_pos = HAL.get_position()[0]
-            y_pos = HAL.get_position()[1]
-
-            # Command the drone to the detected face location
-            HAL.set_cmd_pos(face_x, face_y, 3, angle)
-
-            # Capture updated images
-            frontal_image = HAL.get_frontal_image()
-            ventral_image = HAL.get_ventral_image()
-
-            # Show images in the GUI
-            GUI.showImage(frontal_image)
-            GUI.showLeftImage(ventral_image)
-
-        # Perform rescue maneuver, e.g., hover in place or land
-        # Add your rescue maneuver logic here
-
-# Note: This code is a starting point and may need further customization based on your specific requirements.
-
-#########################################################################################################
-import cv2
-import numpy as np
-from GUI import GUI
-from HAL import HAL
-
-# Coordinates of the safety boat and known survivor location
-safety_boat_coordinates = (40.280061, -3.817639)  # 40º16’48.2” N, 3º49’03.5” W
-survivor_coordinates = (40.279786, -3.817161)  # 40º16’47.23” N, 3º49’01.78” W
-
-# Constants
-victims_x = survivor_coordinates[0]# Update with the actual coordinates
-victims_y = survivor_coordinates[1] # Update with the actual coordinates
-boat_x = 0
-boat_y = 0
-
-x_vel = 0.25
-angle = 0.6
-iterations = 0
-spiral_iterations = 300
-landing_margin = 0.07
-
-x_pos = HAL.get_postion()[0]
-y_pos = HAL.get_position()[1]
-
-
-# Takeoff
-HAL.takeoff(3)
-
-# Face detection function
-def detect_faces(image):
-    # Use a pre-trained face detection model
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    
-    # Convert the image to grayscale for face detection
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    
-    # Detect faces in the image
-    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=5)
-    
-    return faces
-
-# Move dron to victims location
-HAL.set_cmd_pos(victims_x, victims_y, 3, angle)
-
-# Hacer barrido
-
-  # Main loop
-while True:
-    #print("Position: ", HAL.get_position())
-    # Capture images from the drone's cameras
-    frontal_image = HAL.get_frontal_image()
-    ventral_image = HAL.get_ventral_image()
-
-    # Show images in the GUI
-    GUI.showImage(frontal_image)
-    GUI.showLeftImage(ventral_image)
-# Note: This code is a starting point and may need further customization based on your specific requirements.
+  	# Enter iterative code!
+    GUI.showImage(HAL.get_frontal_image())
+    GUI.showLeftImage(HAL.get_ventral_image())
