@@ -2,8 +2,6 @@ from GUI import GUI
 from HAL import HAL
 # Enter sequential code!
 
-while True:
-    # Enter iterative code!from GUI import GUI
 from HAL import HAL
 import cv2 as cv
 
@@ -17,7 +15,7 @@ print("x: ", victims_x, "// y: ", victims_y)
 boat_x = 0
 boat_y = 0
 
-takeoff_height = 4
+takeoff_height = 3
 
 x_vel = 0.25
 angle = 0.6
@@ -67,7 +65,7 @@ while (saved_victims <= num_victims):
   img_gray = cv.cvtColor(ventral_img, cv.COLOR_BGR2GRAY)
   for angle in range (0, 365, 10):
     detected_faces = face_cascade.detectMultiScale(cv.rotate(img_gray, angle), 1.1, 4)
-    print("Detected faces", len(detected_faces))
+    print("Detected faces", detected_faces)
     # When there is a face stop on top of it and recognize it
     # If no faces move in spiral
     # increment linear velocity
