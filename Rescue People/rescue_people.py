@@ -22,7 +22,7 @@ y_pos = HAL.get_position()[1]
 
 initial_linear_vel = 3 # Meters per second
 linear_vel = initial_linear_vel # Meters per second
-linear_vel_inc = 1# Meters per second
+linear_vel_inc = 0.0001# Meters per second
 
 ang_vel = 0.79 # Radians per second
 
@@ -61,6 +61,7 @@ while (saved_victims <= num_victims):
   # If no faces move in spiral
   # increment linear velocity
   linear_vel += linear_vel_inc
+  print("linear_vel", linear_vel)
   HAL.set_cmd_mix(linear_vel, 0, takeoff_height, ang_vel)
 
 # Final Loop
