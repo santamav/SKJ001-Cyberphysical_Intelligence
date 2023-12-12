@@ -1,6 +1,11 @@
 from GUI import GUI
 from HAL import HAL
-import cv2
+# Enter sequential code!
+
+while True:
+    # Enter iterative code!from GUI import GUI
+from HAL import HAL
+import cv2 as cv
 
 # Coordinates of the safety boat and known survivor location
 boat_coordinates = (430492, 4459162)  # 40º16'48.2" N, 3º49'03.5" W
@@ -22,9 +27,11 @@ y_pos = HAL.get_position()[1]
 
 initial_linear_vel = 3 # Meters per second
 linear_vel = initial_linear_vel # Meters per second
-linear_vel_inc = 0.0001# Meters per second
+linear_vel_inc = 0.00005# Meters per second
 
 ang_vel = 0.79 # Radians per second
+
+face_cascade = cv.CascadeClassifier(cv.data.haarcascades + 'haarcascade_frontalface_alt.xml')
 
 
 num_victims = 5
@@ -57,11 +64,14 @@ while (saved_victims <= num_victims):
   GUI.showImage(frontal_img)
   GUI.showLeftImage(ventral_img)
   # Check if there are any faces
-
-  # If no faces move in spiral
-  # increment linear velocity
+  img_gray = cv.cvtColor(ventral_img, cv.COLOR_BGR2GRAY)
+  for angle in range (0, 365, 10):
+    detected_faces = face_cascade.detectMultiScale(cv.rotate(img_gray, angle), 1.1, 4)
+    print("Detected faces", len(detected_faces))
+    # When there is a face stop on top of it and recognize it
+    # If no faces move in spiral
+    # increment linear velocity
   linear_vel += linear_vel_inc
-  print("linear_vel", linear_vel)
   HAL.set_cmd_mix(linear_vel, 0, takeoff_height, ang_vel)
 
 # Final Loop
