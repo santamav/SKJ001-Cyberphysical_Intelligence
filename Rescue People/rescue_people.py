@@ -1,7 +1,7 @@
 from GUI import GUI
 from HAL import HAL
-# Enter sequential code!
 import cv2 as cv
+import math
 
 # Coordinates of the safety boat and known survivor location
 boat_coordinates = (430492, 4459162)  # 40º16'48.2" N, 3º49'03.5" W
@@ -13,7 +13,7 @@ print("x: ", victims_x, "// y: ", victims_y)
 boat_x = 0
 boat_y = 0
 
-takeoff_height = 2
+takeoff_height = 3
 
 x_vel = 0.25
 angle = 0.6
@@ -23,7 +23,7 @@ y_pos = HAL.get_position()[1]
 
 initial_linear_vel = 3 # Meters per second
 linear_vel = initial_linear_vel # Meters per second
-linear_vel_inc = 0.00005# Meters per second
+linear_vel_inc = 0.005# Meters per loop
 
 ang_vel = 0.79 # Radians per second
 
@@ -32,7 +32,8 @@ face_cascade = cv.CascadeClassifier(cv.data.haarcascades + 'haarcascade_frontalf
 
 num_victims = 5
 saved_victims = 0
-faces = []
+victims_locations = []
+loc_radius = 3 # Area threshold to consider a victim already saved
 
 # Takeoff
 HAL.takeoff(takeoff_height)
@@ -50,12 +51,21 @@ while inPosition:
     inPosition = False
 
 
-def VictimFound(victim_location):
-  # Check if the location of the victim is already on the dictionary
-  print("victim_location", victim_location)
-  # If not, add a new found victim
-  # If true, continuw with the search
-  return False
+def VictimFound():
+  # Get drone location and orientation
+  drone_location = HAL.get_position()
+  dron_orientation = HAL.get_orientation()
+  # Calculate the victim location from the drone orientation
+  victim_location = (drone_location[0] + math.cos(dron_orientation[2]) - math.sin(dron_orientation[2]), drone_location[1] + math.sin(dron_orientation[2]) + math.cos(dron_orientation[2]))
+  #print("Drone location: ", drone_location, "\tVictim location: ", victim_location)
+  # Check if the victim is already saved
+  for found_victim in victims_locations:
+    if (found_victim[0]-loc_radius < victim_location[0] and victim_location[0] < found_victim[0]+loc_radius and found_victim[1]-loc_radius < victim_location[1] and victim_location[1] < found_victim[1]+loc_radius):
+      return False # The victim was already found
+
+  # If we get here, the victim is not saved yet
+  victims_locations.append(victim_location) # store the victim location
+  return True # The victim is new
 	
 # Find and save 
 while (saved_victims <= num_victims):
@@ -82,8 +92,12 @@ while (saved_victims <= num_victims):
     detected_faces = face_cascade.detectMultiScale(im_rot, 1.1, 4)
     #print("Detected faces at angle", angle, ":", detected_faces)
     # When if we detect a face, store it location and exit the loop
-    for face in detected_faces:
-      if(VictimFound(face)): break
+    if(len(detected_faces) > 0):
+      for face in detected_faces:
+        if(VictimFound()):
+          saved_victims += 1
+          print("Número de victimas encontradas: ", saved_victims)
+      break # If we have already found a face, we don't need to keep rotating the image
 
   linear_vel += linear_vel_inc
   HAL.set_cmd_mix(linear_vel, 0, takeoff_height, ang_vel)
