@@ -26,7 +26,6 @@ face_cascade = cv.CascadeClassifier(cv.data.haarcascades + 'haarcascade_frontalf
 num_victims = 5
 saved_victims = 0
 victims_locations = []
-loc_radius = 3 # Area threshold to consider a victim already saved
 
 distance = 0 # Meters
 distance_inc = 0.5 # Meters
@@ -34,24 +33,30 @@ spiral_angle = 0 # rads
 spiral_angle_inc = 0.174533 # rads
 search_max_distance = 50 # Meters
 
+distance_thr = 4 # new victim distance threshold in meters
+
 # Takeoff
 HAL.takeoff(takeoff_height)
 
-def IsNewVictim(face):
+def FaceFound(face):
   # Get drone location and orientation
   drone_location = HAL.get_position()
   dron_orientation = HAL.get_orientation()
   # Calculate the victim location from the drone orientation and victim pixel coordinates
-  victim_location = (drone_location[0] + math.cos(dron_orientation[2]) - math.sin(dron_orientation[2]), drone_location[1] + math.sin(dron_orientation[2]) + math.cos(dron_orientation[2]))
+  victim_location = (drone_location[0],drone_location[1])
   #print("Drone location: ", drone_location, "\tVictim location: ", victim_location)
   # Check if the victim is already saved
-  for found_victim in victims_locations:
-    if (found_victim[0]-loc_radius < victim_location[0] and victim_location[0] < found_victim[0]+loc_radius and found_victim[1]-loc_radius < victim_location[1] and victim_location[1] < found_victim[1]+loc_radius):
-      return False # The victim was already found
-
-  # If we get here, the victim is not saved yet
+  for known_victim in victims_locations:
+    # Calculate the distance to the known victim
+    sqr_distance = (known_victim[0]-victim_location[0])**2 + (known_victim[1]-victim_location[1])**2
+    if sqr_distance < distance_thr**2:
+      #print("Victim already saved with distance: ", sqr_distance, "\tknown victims: ", len(victims_locations))
+      return # The victim was already found
+    
+  # If we end the loop, it means that the victim has not been saved yet
   victims_locations.append(victim_location) # store the victim location
-  return True # New victim found
+  print('saved victim at location: ', victim_location)
+  print('saved victims: ', len(victims_locations))
 
 # Initial target location
 target_x = victims_x
@@ -81,7 +86,6 @@ while (is_searching):
       (h, w) = img_gray.shape[:2]
       center = (w // 2, h // 2)
       M = cv.getRotationMatrix2D(center, im_angle, 1.0)
-
       # Perform the rotation
       im_rot = cv.warpAffine(img_gray, M, (w, h))
       #plt.imshow(im_rot, cmap='gray')
@@ -91,9 +95,7 @@ while (is_searching):
       #print("Detected faces at angle", angle, ":", detected_faces)
       if(len(detected_faces) > 0):
         for face in detected_faces:
-          if(IsNewVictim(face)):
-            saved_victims += 1
-            print("Saved victims: ", saved_victims)
+          FaceFound(face)
     # Increment spiral angle
     spiral_angle += spiral_angle_inc
     # Increment spiral distance
@@ -101,11 +103,13 @@ while (is_searching):
     # Calculate new target location
     target_x = victims_x + distance * math.cos(spiral_angle)
     target_y = victims_y + distance * math.sin(spiral_angle)
-    print("New location: ", target_x, target_y)
-  else:
-    print("Moving to: ", target_x, target_y, " with ", saved_victims, " saved victims")
-  is_searching = saved_victims < num_victims and distance < search_max_distance
-  is_in_position = (target_x-1 < x_pos) and (x_pos <target_x+1) and (target_y-1 < y_pos) and (y_pos < target_y+1)
+    #print("New location: ", target_x, target_y)
+  #else:
+    #print("Moving to: ", target_x, target_y, " with ", saved_victims, " saved victims")
+  is_searching = len(victims_locations) <= num_victims and distance < search_max_distance
+  # Calculate distance to position
+  sqr_distance_to_position = (target_x-x_pos)**2 + (target_y-y_pos)**2
+  is_in_position = sqr_distance_to_position < 1
 
 # Return to boat
 target_x = boat_x
