@@ -9,7 +9,7 @@ survivor_coordinates = (430532, 4459132)  # 40º16'47.23" N, 3º49'01.78" W
 
 victims_x = boat_coordinates[1] - survivor_coordinates[1] # Relative victims positions
 victims_y = boat_coordinates[0] - survivor_coordinates[0] # Relative victims positions
-print("x: ", victims_x, "// y: ", victims_y)
+print("Victims at x: ", victims_x, "// y: ", victims_y)
 boat_x = 0
 boat_y = 0
 
@@ -28,14 +28,15 @@ saved_victims = 0
 victims_locations = []
 
 distance = 0 # Meters
-distance_inc = 0.5 # Meters
+distance_inc = 0.98 # Meters
 spiral_angle = 0 # rads
 spiral_angle_inc = 0.174533 # rads
 search_max_distance = 50 # Meters
 
-distance_thr = 4 # new victim distance threshold in meters
+distance_thr = 4.6 # new victim distance threshold in meters
 
 # Takeoff
+print("Taking off")
 HAL.takeoff(takeoff_height)
 
 def FaceFound(face):
@@ -63,6 +64,7 @@ target_x = victims_x
 target_y = victims_y
 
 # Search loop
+print("Drone in position, searching for victims")
 is_searching = True
 is_in_position = False
 while (is_searching):
@@ -106,15 +108,18 @@ while (is_searching):
     #print("New location: ", target_x, target_y)
   #else:
     #print("Moving to: ", target_x, target_y, " with ", saved_victims, " saved victims")
-  is_searching = len(victims_locations) <= num_victims and distance < search_max_distance
   # Calculate distance to position
   sqr_distance_to_position = (target_x-x_pos)**2 + (target_y-y_pos)**2
   is_in_position = sqr_distance_to_position < 1
+  # Update the is searching condition
+  is_searching = len(victims_locations) <= num_victims and distance < search_max_distance
 
 # Return to boat
+print("All vicims found, returning to boat")
 target_x = boat_x
 target_y = boat_y
-while is_in_position:
+is_in_position = False
+while not is_in_position:
   # Get Cameras data
   ventral_img = HAL.get_ventral_image()
   frontal_img = HAL.get_frontal_image()
@@ -122,13 +127,25 @@ while is_in_position:
   GUI.showImage(frontal_img)
   GUI.showLeftImage(ventral_img)
   HAL.set_cmd_pos(target_x, target_y, takeoff_height, angle)
-  is_in_position = (target_x-1 < x_pos) and (x_pos <target_x+1) and (target_y-1 < y_pos) and (y_pos < target_y+1)
+  # Check if drone is in postion
+  x_pos = HAL.get_position()[0]
+  y_pos = HAL.get_position()[1]
+  sqr_distance_to_position = (target_x-x_pos)**2 + (target_y-y_pos)**2
+  is_in_position = sqr_distance_to_position < 1
 
-while True:
-  # Get Cameras data
+# Land drone
+print("Landing drone")
+is_landed = False
+while (not is_landed):
+    # Get Cameras data
   ventral_img = HAL.get_ventral_image()
   frontal_img = HAL.get_frontal_image()
   # Show images
   GUI.showImage(frontal_img)
   GUI.showLeftImage(ventral_img)
+  # Land drone
   HAL.land()
+  is_landed = HAL.get_landed_state() == 1
+  
+print("Drone landed")
+while True:
